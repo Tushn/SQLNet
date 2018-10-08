@@ -9,22 +9,22 @@ import datetime
 import argparse
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser();
     parser.add_argument('--toy', action='store_true', 
-            help='If set, use small data; used for fast debugging.')
+            help='If set, use small data; used for fast debugging.');
     parser.add_argument('--suffix', type=str, default='',
-            help='The suffix at the end of saved model name.')
+            help='The suffix at the end of saved model name.');
     parser.add_argument('--ca', action='store_true',
-            help='Use conditional attention.')
+            help='Use conditional attention.');
     parser.add_argument('--dataset', type=int, default=0,
-            help='0: original dataset, 1: re-split dataset')
+            help='0: original dataset, 1: re-split dataset');
     parser.add_argument('--rl', action='store_true',
-            help='Use RL for Seq2SQL(requires pretrained model).')
+            help='Use RL for Seq2SQL(requires pretrained model).');
     parser.add_argument('--baseline', action='store_true', 
-            help='If set, then train Seq2SQL model; default is SQLNet model.')
+            help='If set, then train Seq2SQL model; default is SQLNet model.');
     parser.add_argument('--train_emb', action='store_true',
-            help='Train word embedding for SQLNet(requires pretrained model).')
-    args = parser.parse_args()
+            help='Train word embedding for SQLNet(requires pretrained model).');
+    args = parser.parse_args();
 
     N_word=300
     B_word=42
@@ -66,38 +66,38 @@ if __name__ == '__main__':
 
     if args.rl or args.train_emb: # Load pretrained model.
         agg_lm, sel_lm, cond_lm = best_model_name(args, for_load=True)
-        print "Loading from %s"%agg_lm
+        print("Loading from %s"%agg_lm);
         model.agg_pred.load_state_dict(torch.load(agg_lm))
-        print "Loading from %s"%sel_lm
+        print("Loading from %s"%sel_lm);
         model.sel_pred.load_state_dict(torch.load(sel_lm))
-        print "Loading from %s"%cond_lm
+        print("Loading from %s"%cond_lm);
         model.cond_pred.load_state_dict(torch.load(cond_lm))
 
     if args.rl:
         best_acc = 0.0
         best_idx = -1
-        print "Init dev acc_qm: %s\n  breakdown on (agg, sel, where): %s"% \
+        print("Init dev acc_qm: %s\n  breakdown on (agg, sel, where): %s"% \
                 epoch_acc(model, BATCH_SIZE, val_sql_data,\
-                val_table_data, TRAIN_ENTRY)
-        print "Init dev acc_ex: %s"%epoch_exec_acc(
-                model, BATCH_SIZE, val_sql_data, val_table_data, DEV_DB)
+                val_table_data, TRAIN_ENTRY));
+        print("Init dev acc_ex: %s"%epoch_exec_acc(
+                model, BATCH_SIZE, val_sql_data, val_table_data, DEV_DB));
         torch.save(model.cond_pred.state_dict(), cond_m)
         for i in range(100):
-            print 'Epoch %d @ %s'%(i+1, datetime.datetime.now())
-            print ' Avg reward = %s'%epoch_reinforce_train(
-                model, optimizer, BATCH_SIZE, sql_data, table_data, TRAIN_DB)
-            print ' dev acc_qm: %s\n   breakdown result: %s'% epoch_acc(
-                model, BATCH_SIZE, val_sql_data, val_table_data, TRAIN_ENTRY)
+            print('Epoch %d @ %s'%(i+1, datetime.datetime.now()));
+            print(' Avg reward = %s'%epoch_reinforce_train(
+                model, optimizer, BATCH_SIZE, sql_data, table_data, TRAIN_DB));
+            print(' dev acc_qm: %s\n   breakdown result: %s'% epoch_acc(
+                model, BATCH_SIZE, val_sql_data, val_table_data, TRAIN_ENTRY));
             exec_acc = epoch_exec_acc(
                     model, BATCH_SIZE, val_sql_data, val_table_data, DEV_DB)
-            print ' dev acc_ex: %s', exec_acc
+            print(' dev acc_ex: %s', exec_acc);
             if exec_acc[0] > best_acc:
                 best_acc = exec_acc[0]
                 best_idx = i+1
                 torch.save(model.cond_pred.state_dict(),
                         'saved_model/epoch%d.cond_model%s'%(i+1, args.suffix))
                 torch.save(model.cond_pred.state_dict(), cond_m)
-            print ' Best exec acc = %s, on epoch %s'%(best_acc, best_idx)
+            print(' Best exec acc = %s, on epoch %s'%(best_acc, best_idx));
     else:
         init_acc = epoch_acc(model, BATCH_SIZE,
                 val_sql_data, val_table_data, TRAIN_ENTRY)
@@ -107,8 +107,8 @@ if __name__ == '__main__':
         best_sel_idx = 0
         best_cond_acc = init_acc[1][2]
         best_cond_idx = 0
-        print 'Init dev acc_qm: %s\n  breakdown on (agg, sel, where): %s'%\
-                init_acc
+        print('Init dev acc_qm: %s\n  breakdown on (agg, sel, where): %s'%\
+                init_acc);
         if TRAIN_AGG:
             torch.save(model.agg_pred.state_dict(), agg_m)
             if args.train_emb:
@@ -122,16 +122,16 @@ if __name__ == '__main__':
             if args.train_emb:
                 torch.save(model.cond_embed_layer.state_dict(), cond_e)
         for i in range(100):
-            print 'Epoch %d @ %s'%(i+1, datetime.datetime.now())
-            print ' Loss = %s'%epoch_train(
+            print('Epoch %d @ %s'%(i+1, datetime.datetime.now()));
+            print(' Loss = %s'%epoch_train(
                     model, optimizer, BATCH_SIZE, 
-                    sql_data, table_data, TRAIN_ENTRY)
-            print ' Train acc_qm: %s\n   breakdown result: %s'%epoch_acc(
-                    model, BATCH_SIZE, sql_data, table_data, TRAIN_ENTRY)
+                    sql_data, table_data, TRAIN_ENTRY));
+            print (' Train acc_qm: %s\n   breakdown result: %s'%epoch_acc(
+                    model, BATCH_SIZE, sql_data, table_data, TRAIN_ENTRY));
             #val_acc = epoch_token_acc(model, BATCH_SIZE, val_sql_data, val_table_data, TRAIN_ENTRY)
             val_acc = epoch_acc(model,
                     BATCH_SIZE, val_sql_data, val_table_data, TRAIN_ENTRY)
-            print ' Dev acc_qm: %s\n   breakdown result: %s'%val_acc
+            print(' Dev acc_qm: %s\n   breakdown result: %s'%val_acc);
             if TRAIN_AGG:
                 if val_acc[1][0] > best_agg_acc:
                     best_agg_acc = val_acc[1][0]
@@ -165,6 +165,6 @@ if __name__ == '__main__':
                         torch.save(model.cond_embed_layer.state_dict(),
                         'saved_model/epoch%d.cond_embed%s'%(i+1, args.suffix))
                         torch.save(model.cond_embed_layer.state_dict(), cond_e)
-            print ' Best val acc = %s, on epoch %s individually'%(
+            print(' Best val acc = %s, on epoch %s individually'%(
                     (best_agg_acc, best_sel_acc, best_cond_acc),
-                    (best_agg_idx, best_sel_idx, best_cond_idx))
+                    (best_agg_idx, best_sel_idx, best_cond_idx)))
